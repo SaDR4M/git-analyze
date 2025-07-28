@@ -61,7 +61,8 @@ class GithubProfile:
                 setattr(self , key , value)
                 
 
-    
+
+
 class GithubRepo :
     def __init__(self , token:str , login:str) :
         self.token = token
@@ -74,14 +75,24 @@ class GithubRepo :
             "per_page" : 30
         }
         
+        self.name = None
+        self.forks = None
+        self.id = None
+        self.langauge = None
+        
     @classmethod
     async def create(cls , token:str, login:str) :
         """Factory class to create repo instance"""
         repo = cls(token , login)
         await repo._fetch_user_repos()
         return repo
-        
-        
+    
+    # TODO -> Search how to set -> Return value to the class
+    async def create_repo_with_data(self , repo_data:dict) :
+        """Create new repo instance with the repo data"""
+        repo_instance = GithubRepo(self.token , self.login)
+        repo_instance._set_attributes(**repo_data)
+            
     async def _fetch_user_repos(self) -> dict:    
         """Fetch user's repoistory list then pass to another function to set needed attrs"""
         async with aiohttp.ClientSession() as session :    
@@ -96,17 +107,25 @@ class GithubRepo :
                     ic(data)
                     repo_list = []
                     for repo in data :
+                        repo_name = repo.get("name").lower() 
+                        repo_insatnce = await self.create_repo_with_data()
+                        # create a repo object                        
                         repo_list.append(
-                            dict(name=repo.get("name"))
+                            {
+                                repo_name : repo_insatnce
+                            }
                         )
-                    ic(repo_list)
-                    # self._set_attributes(**response_json)
                 else :
                     raise aiohttp.BadContentDispositionParam
                 
             
     def _set_attributes(self , **kwargs) :
-        pass
+        """Set attribute for the github repo"""
+        allowed_attrs = ["name" , "fork" , "id" , "language"]
+        for key,value in kwargs.items() :
+            if key in allowed_attrs :
+                setattr(self , key , value)
+            
         
     
 # class GithubCommit:
@@ -130,4 +149,5 @@ class GithubRepo :
 #         full_data = [{"commit"  : commit["commit"]["message"]} for commit in response_json]
 #         print(full_data)
 #         return None
+
         
