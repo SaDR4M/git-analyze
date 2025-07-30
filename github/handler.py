@@ -4,6 +4,8 @@ import asyncio
 import aiohttp
 from decouple import config
 from icecream import ic
+from typing import Optional , Literal , Iterator
+from dataclasses import dataclass
 # local
 from github.urls import (
     GITHUB_COMMIT_URL,
@@ -11,143 +13,96 @@ from github.urls import (
     GITHUB_USERS_REPO_URL
 )
 
-ACCESS_TOKEN = config("GITHUB_ACCESS_TOKEN")
-
-class GithubProfile:
-    def __init__(self , token) :
-        self.token = token
-        self.headers =  {
-            "Authorization" : f"Bearer {ACCESS_TOKEN}"
-        }
-        
-        self.avatar_url = None
-        self.followers = None
-        self.following = None
-        self.name = None
-        self.user_name = None
-        self.allowed_attrs = None
     
-    @classmethod
-    async def create(cls , token:str) :
-        """Factory class to create profile instance"""
-        ic(token)
-        user = cls(token)
-        await user._fetch_user_data()
-        return user
-        
-    async def _fetch_user_data(self) -> dict :
-        """Fetch user's profile data then pass it to another function to set needed attrs"""
-        async with aiohttp.ClientSession() as session :
-            
-            async with session.get(
-                url = GITHUB_USER_URL,
-                headers = self.headers,
+class GithubProfile:
+    
+    def _set_owner_name(self , token:str) -> str | None :
+        """Set owner name to fetch further data"""
+        try :
+            response = requests.get(
+                url=GITHUB_USER_URL, 
+                headers =  {
+                    "Authorization" : f"Bearer {token}"
+                },
                 params = {
                     "type" : "all"
                 }
-            ) as response :
+            )
+            if response.status_code == 200 :
+                data = response.json()
+                owner_name = data.get("login" , None)
                 
-                if response.status == 200 :
-                    data = await response.json()
-                    self._set_attributes(**data)
-                else :
-                    raise aiohttp.BadContentDispositionParam
-                 
-    def _set_attributes(self , **kwargs) :
-        """set user's profile attribute"""
-        allowed_attrs = ["avatar_url" , "followers" , "following" , "name" , "login" , "allowed_attrs"]
-        for key,value in kwargs.items() :
-            if key in allowed_attrs :
-                setattr(self , key , value)
+                if owner_name is None :
+                    raise ValueError("Owner cannot be None , Failed to fetch user's name")
                 
+                setattr(self , "owner" , owner_name)
+    
+                return owner_name
+            else :
+                return None
+            
+        except Exception as e :
+            raise e
+        
+                
+    def test_github_connection(self, token:str) -> bool :
+        """test connection with the user token"""
+        try :
+            response = requests.get(
+                url=GITHUB_USER_URL, 
+                headers =  {
+                    "Authorization" : f"Bearer {token}"
+                },
+                params = {
+                    "type" : "all"
+                }
+            )
+            if response.status_code == 200 :
+                return True
+            else :
+                return False
+            
+        except Exception as e :
+            raise e
+        
 
+    @property
+    def get_owner(self) -> str:
+        return self.owner
 
-
+@dataclass
 class GithubRepo :
-    def __init__(self , token:str , login:str) :
-        self.token = token
-        self.login = login
-        self.header =  {
-            "Authorization" : f"Bearer {ACCESS_TOKEN}",
-        }
-        self.params = {
-            "page" : 1,
-            "per_page" : 30
-        }
-        
-        self.name = None
-        self.forks = None
-        self.id = None
-        self.langauge = None
-        
-    @classmethod
-    async def create(cls , token:str, login:str) :
-        """Factory class to create repo instance"""
-        repo = cls(token , login)
-        await repo._fetch_user_repos()
-        return repo
+    page : int = 1
+    per_page : int = 30
     
-    # TODO -> Search how to set -> Return value to the class
-    async def create_repo_with_data(self , repo_data:dict) :
-        """Create new repo instance with the repo data"""
-        repo_instance = GithubRepo(self.token , self.login)
-        repo_instance._set_attributes(**repo_data)
-            
-    async def _fetch_user_repos(self) -> dict:    
+    def get_user_repositories(self , token:str , owner:str , page: Optional[int] = None , per_page : Optional[int] = None ) -> Iterator[str]:    
         """Fetch user's repoistory list then pass to another function to set needed attrs"""
-        async with aiohttp.ClientSession() as session :    
-            
-            async with session.get(
-                url = GITHUB_USERS_REPO_URL.format(),
-                headers = self.header,
-                params = self.params
-            ) as response :
-                if response.status == 200 :
-                    data = await response.json()
-                    ic(data)
-                    repo_list = []
-                    for repo in data :
-                        repo_name = repo.get("name").lower() 
-                        repo_insatnce = await self.create_repo_with_data()
-                        # create a repo object                        
-                        repo_list.append(
-                            {
-                                repo_name : repo_insatnce
-                            }
-                        )
-                else :
-                    raise aiohttp.BadContentDispositionParam
-                
-            
-    def _set_attributes(self , **kwargs) :
-        """Set attribute for the github repo"""
-        allowed_attrs = ["name" , "fork" , "id" , "language"]
-        for key,value in kwargs.items() :
-            if key in allowed_attrs :
-                setattr(self , key , value)
-            
+        page_number =  page if page is not None else self.page,
+        per_page_number = per_page if per_page is not None else self.per_page
+        # Avoid getting more than 30 for single page repo
         
+        if per_page_number > 30 :
+            raise ValueError("Maximum repos to fetch in single page is 30") 
+        
+        response = requests.get(
+            url = GITHUB_USERS_REPO_URL.format(),
+            headers ={
+            "Authorization" : f"Bearer {token}",
+            },
+            params =  {
+                "page" : page_number,
+                "per_page" : per_page_number
+            }
+        )
+        
+        repo_list = [
+            f"{owner}/{repo.get('name', '').lower()}"
+            for repo in response.json()
+        ] if response.status_code == 200 else []
+        ic(repo_list)
+        return repo_list
     
-# class GithubCommit:
-#     def __init__(self):
-#         self.header = {
-#             "Authorization" : f"Bearer {ACCESS_TOKEN}"
-#         }
-        
-#     async def get_latest_commits(self , owner:str , repo:str) -> dict:
-#         print(GITHUB_COMMIT_URL)
-#         response = requests.get(
-#             url=GITHUB_COMMIT_URL.format(owner=owner , repo=repo),
-#             headers=self.header,
-#             # TODO add since or until
-#             params = {
-#                 "page" : 1,
-#                 "per_page" : 100,
-#             }
-#         )
-#         response_json = response.json()
-#         full_data = [{"commit"  : commit["commit"]["message"]} for commit in response_json]
-#         print(full_data)
-#         return None
-
-        
+class GithubCommit:
+    pass
+    
+    

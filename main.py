@@ -1,15 +1,18 @@
-import asyncio
+from github.gui import QApplication , GitAnalyzerGUI
+import sys
 
-from decouple import config
-from icecream import ic
+def main():
+    app = QApplication(sys.argv)
+    
+    # Set application properties
+    app.setApplicationName("Git Analyzer")
+    app.setApplicationVersion("1.0")
+    
+    # Create and show main window
+    window = GitAnalyzerGUI()
+    window.show()
+    
+    sys.exit(app.exec())
 
-from github.handler import GithubProfile , GithubRepo
-
-
-
-ACCESS_TOKEN = config("GITHUB_ACCESS_TOKEN")
-
-user_profile = asyncio.run(GithubProfile.create(ACCESS_TOKEN))
-user_name = user_profile.login
-ic(user_name)
-user_repos = asyncio.run(GithubRepo.create(ACCESS_TOKEN , user_name))
+if __name__ == '__main__':
+    main()
