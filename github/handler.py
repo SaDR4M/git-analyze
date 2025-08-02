@@ -116,7 +116,7 @@ class GithubCommit:
     total_commits : int = 0
     commit_list : list = None 
     page : int = 1
-    per_page : int = 100
+    per_page : int = 10
     next_pages : list = None
     
     def get_repo_commits(self , token:str , owner:str , repo:str , page : Optional[int] = None , per_page : Optional[int] = None) -> Iterator[str] :
@@ -142,8 +142,10 @@ class GithubCommit:
             # When the status appear in the response there is not commit for the repo    
             if "status" in data :
                 raise EmptyCommitHistory
-                
-            self.commit_list = []
+
+            if self.commit_list is None :
+                self.commit_list = []
+            
             for commit in data :
                 commit_data = commit.get("commit" , None)
                 
@@ -152,12 +154,13 @@ class GithubCommit:
                     commit_message = commit_data.get("message")
                     commit_date = commit_data.get("author" , None).get("date" , None)
                     self.commit_list.append(f"{commit_date}/{commit_message}")
-
             # get the next pages if they exist
             if page_number == 1 :
                 self.next_pages = []
                 next_page = response.headers.get("Link" , None)
                 self._get_next_pages(next_page , token , owner , repo , per_page_number)
+        
+            return self.commit_list
             
 
     def _get_next_pages(self, link: str, token: str, owner: str, repo: str, per_page: int) -> None:
