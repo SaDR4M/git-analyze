@@ -82,7 +82,8 @@ class GitAnalyzerGUI(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(15, 15, 15, 15)
-        main_layout.setSpacing(10)
+        # --- UI-FIX: Increased spacing between main group boxes ---
+        main_layout.setSpacing(20)
 
         # --- Header ---
         header_layout = QHBoxLayout()
@@ -95,7 +96,6 @@ class GitAnalyzerGUI(QMainWindow):
         # --- GitHub Connection Section ---
         connection_group = QGroupBox("1. GitHub Connection")
         connection_layout = QGridLayout(connection_group)
-        # UI-FIX: Added content margins for internal spacing
         connection_layout.setContentsMargins(15, 15, 15, 15)
         connection_layout.setSpacing(12)
         self.token_input = QLineEdit()
@@ -120,7 +120,6 @@ class GitAnalyzerGUI(QMainWindow):
         # --- Repository Selection Section ---
         self.repo_group = QGroupBox("2. Repository Selection")
         repo_layout = QVBoxLayout(self.repo_group)
-        # UI-FIX: Added content margins for internal spacing
         repo_layout.setContentsMargins(15, 15, 15, 15)
         repo_layout.setSpacing(12)
         self.repo_combo = QComboBox()
@@ -133,7 +132,6 @@ class GitAnalyzerGUI(QMainWindow):
         # --- Commit History Section ---
         self.commit_group = QGroupBox("3. Commit History")
         commit_layout = QVBoxLayout(self.commit_group)
-        # UI-FIX: Added content margins for internal spacing
         commit_layout.setContentsMargins(15, 15, 15, 15)
         commit_layout.setSpacing(12)
         self.load_commits_btn = QPushButton("Load Commits")
@@ -148,7 +146,6 @@ class GitAnalyzerGUI(QMainWindow):
         # --- AI Analysis Section ---
         self.analysis_group = QGroupBox("4. AI Analysis")
         analysis_layout = QVBoxLayout(self.analysis_group)
-        # UI-FIX: Added content margins for internal spacing
         analysis_layout.setContentsMargins(15, 15, 15, 15)
         analysis_layout.setSpacing(12)
         
@@ -185,7 +182,6 @@ class GitAnalyzerGUI(QMainWindow):
                 font-weight: bold; font-size: 15px; color: #56b6c2;
                 border: 1px solid #323842; border-radius: 6px;
                 margin-top: 1ex; background-color: #282c34;
-                margin-bottom: 10px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin; subcontrol-position: top left;
@@ -243,6 +239,7 @@ class GitAnalyzerGUI(QMainWindow):
             QListWidget {
                 border: 1px solid #323842; border-radius: 4px;
                 background-color: #21252b;
+                outline: 0px; /* --- FIX: Prevent focus rectangle on the widget itself --- */
             }
             QListWidget::item { padding: 8px; }
             QListWidget::item:alternate { background-color: #2c313a; }
