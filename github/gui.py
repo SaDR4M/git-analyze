@@ -22,7 +22,7 @@ from PyQt6.QtGui import QIcon
 try:
     # Assuming your handler files are in a 'github' directory
     from github.handler import GithubProfile, GithubRepo, GithubCommit
-    from github.ai_anaylzer import analyze_commit_with_ai
+    from github.ai_analyzer import analyze_commit_with_ai
 except ImportError:
     print("Warning: A handler was not found. Using mock classes for GUI demonstration.")
     class GithubProfile:
@@ -41,7 +41,6 @@ except ImportError:
     def analyze_commit_with_ai(commit_messages: list[str]) -> str:
         """MOCK: Simulates AI analysis of the entire commit history."""
         print("UI is pretending to analyze commit history with AI...")
-        # This mock response simulates the kind of holistic feedback you'd get
         return (
             "**Overall Analysis:**\n\n"
             "The commit messages show a good adoption of the conventional commit format, which is excellent for clarity.\n\n"
@@ -75,7 +74,7 @@ class GitAnalyzerGUI(QMainWindow):
     def init_ui(self):
         """Initialize the main UI components and layout."""
         self.setWindowTitle("Git Analyzer")
-        self.setMinimumSize(850, 800) # Increased height for new section
+        self.setMinimumSize(850, 800) # Increased height for commit list
         
         self.setWindowIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
 
@@ -83,7 +82,7 @@ class GitAnalyzerGUI(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(15, 15, 15, 15)
-        main_layout.setSpacing(18)
+        main_layout.setSpacing(10)
 
         # --- Header ---
         header_layout = QHBoxLayout()
@@ -96,6 +95,8 @@ class GitAnalyzerGUI(QMainWindow):
         # --- GitHub Connection Section ---
         connection_group = QGroupBox("1. GitHub Connection")
         connection_layout = QGridLayout(connection_group)
+        # UI-FIX: Added content margins for internal spacing
+        connection_layout.setContentsMargins(15, 15, 15, 15)
         connection_layout.setSpacing(12)
         self.token_input = QLineEdit()
         self.token_input.setPlaceholderText("Enter your GitHub Personal Access Token")
@@ -119,6 +120,8 @@ class GitAnalyzerGUI(QMainWindow):
         # --- Repository Selection Section ---
         self.repo_group = QGroupBox("2. Repository Selection")
         repo_layout = QVBoxLayout(self.repo_group)
+        # UI-FIX: Added content margins for internal spacing
+        repo_layout.setContentsMargins(15, 15, 15, 15)
         repo_layout.setSpacing(12)
         self.repo_combo = QComboBox()
         self.repo_combo.addItem("Connect to GitHub first...")
@@ -126,10 +129,12 @@ class GitAnalyzerGUI(QMainWindow):
         repo_layout.addWidget(self.repo_combo)
         self.repo_group.setEnabled(False)
         main_layout.addWidget(self.repo_group)
-
+        
         # --- Commit History Section ---
         self.commit_group = QGroupBox("3. Commit History")
         commit_layout = QVBoxLayout(self.commit_group)
+        # UI-FIX: Added content margins for internal spacing
+        commit_layout.setContentsMargins(15, 15, 15, 15)
         commit_layout.setSpacing(12)
         self.load_commits_btn = QPushButton("Load Commits")
         self.load_commits_btn.clicked.connect(self.load_commits)
@@ -143,6 +148,8 @@ class GitAnalyzerGUI(QMainWindow):
         # --- AI Analysis Section ---
         self.analysis_group = QGroupBox("4. AI Analysis")
         analysis_layout = QVBoxLayout(self.analysis_group)
+        # UI-FIX: Added content margins for internal spacing
+        analysis_layout.setContentsMargins(15, 15, 15, 15)
         analysis_layout.setSpacing(12)
         
         self.analyze_commits_btn = QPushButton("Analyze All Commits")
@@ -150,7 +157,7 @@ class GitAnalyzerGUI(QMainWindow):
         
         self.analysis_results_text = QTextEdit()
         self.analysis_results_text.setReadOnly(True)
-        self.analysis_results_text.setPlaceholderText("AI feedback will appear here...")
+        self.analysis_results_text.setPlaceholderText("Load commits to enable analysis...")
         
         analysis_layout.addWidget(self.analyze_commits_btn)
         analysis_layout.addWidget(self.analysis_results_text)
@@ -178,6 +185,7 @@ class GitAnalyzerGUI(QMainWindow):
                 font-weight: bold; font-size: 15px; color: #56b6c2;
                 border: 1px solid #323842; border-radius: 6px;
                 margin-top: 1ex; background-color: #282c34;
+                margin-bottom: 10px;
             }
             QGroupBox::title {
                 subcontrol-origin: margin; subcontrol-position: top left;
@@ -186,6 +194,7 @@ class GitAnalyzerGUI(QMainWindow):
             QLabel#headerTitle {
                 font-size: 24px; font-weight: 600; color: #e5c07b;
                 padding: 5px 0;
+                margin-bottom: 5px;
             }
             QLineEdit, QComboBox, QTextEdit {
                 padding: 9px; border: 1px solid #323842;
@@ -194,7 +203,21 @@ class GitAnalyzerGUI(QMainWindow):
             QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
                 border-color: #56b6c2; background-color: #2c313a;
             }
+            
             QComboBox::drop-down { border: none; width: 20px; }
+            QComboBox QAbstractItemView {
+                background-color: #21252b;
+                border: 1px solid #4b5263;
+                selection-background-color: #56b6c2;
+                selection-color: #21252b;
+                color: #c8ceda;
+                padding: 4px;
+                outline: 0px;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 30px;
+            }
+            
             QPushButton {
                 background-color: #3e4451; border: 1px solid #4b5263;
                 color: #c8ceda; padding: 9px 18px;
@@ -338,4 +361,3 @@ class GitAnalyzerGUI(QMainWindow):
         finally:
             self.analyze_commits_btn.setEnabled(True)
             self.analyze_commits_btn.setText("Analyze All Commits")
-
